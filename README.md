@@ -1,4 +1,4 @@
-# Yokin-Project
+# Yokin-Contract
 
 ## Initialize pool contract
 
