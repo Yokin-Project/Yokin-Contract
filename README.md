@@ -12,7 +12,8 @@ This walkthrough explains the key elements and flow of the updated Yokin contrac
 
 1. [Overview](#overview)
 2. [Operational Flow](#recommended-operational-flow)
-3. [Contract Functions](#contract-functions)
+3. [Technical Flow of Funds](#technical-flow-of-funds)
+4. [Contract Functions](#contract-functions)
 
 ---
 
