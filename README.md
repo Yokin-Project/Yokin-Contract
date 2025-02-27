@@ -1,10 +1,4 @@
-# Yokin Contract Walkthrough
-
-This walkthrough explains the key elements and flow of the updated Yokin contract. In this version, the admin creates pools with an automatically generated pool ID and a deposit deadline expressed as a block height. Once the deposit period (determined by `deposit_deadline_height`) is over, the admin can select a winner. Users can then redeem their full deposits (plus any reward for the winner) after the pool’s funds are unlocked.
-
-**Contract Deployed:**
-
-1. [https://mainnet.aleo123.io/programDetail/yokin_1.aleo](https://mainnet.aleo123.io/programDetail/yokin_1.aleo)
+# Yokin Contract 
 
 ---
 
