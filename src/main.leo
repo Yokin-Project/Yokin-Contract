@@ -2,7 +2,7 @@ import credits.aleo;
 import pondo_protocol.aleo;
 import token_registry.aleo;
 
-program yokin_test_1.aleo {
+program yokin_pool_1.aleo {
     const PALEO_TOKEN_ID: field = 1751493913335802797273486270793650302076377624243810059080883537084141842600field;
 
     struct Pool {
@@ -11,8 +11,10 @@ program yokin_test_1.aleo {
         total_paleo: u64,
         total_players: u64,
         reward: u64,
-        redeem_block: u32,
-        deposit_deadline_height: u32,
+        deposit_deadline_timestamp: u32,
+        withdrawal_start_timestamp: u32,
+        deposit_deadline_block: u32,
+        withdrawal_start_block: u32,
     }
 
     struct PlayerPool {
@@ -55,13 +57,15 @@ program yokin_test_1.aleo {
         initialized.set(DEFAULT_KEY, true);
     }
 
-    async transition create_pool_public(deposit_deadline_height: u32) -> Future {
-        return finalize_create_pool_public(self.caller, deposit_deadline_height);
+    async transition create_pool_public(current_timestamp: u32, deposit_deadline_timestamp: u32, withdrawal_start_timestamp: u32) -> Future {
+        return finalize_create_pool_public(self.caller, current_timestamp, deposit_deadline_timestamp, withdrawal_start_timestamp);
     }
 
     async function finalize_create_pool_public(
         public caller: address,
-        deposit_deadline_height: u32
+        current_timestamp: u32,
+        deposit_deadline_timestamp: u32,
+        withdrawal_start_timestamp: u32
     ) {
         assert(caller == admin.get(DEFAULT_KEY));
 
@@ -69,14 +73,19 @@ program yokin_test_1.aleo {
         let count: u64 = pool_count.get_or_use(0u8, 0u64);
         let new_id: u64 = count + 1u64;
 
+        let estimated_deposit_deadline_block: u32 = block.height + ((deposit_deadline_timestamp - current_timestamp)/3u32);
+        let estimated_withdrawal_start_block: u32 = block.height + ((withdrawal_start_timestamp - current_timestamp)/3u32);
+
         let new_pool: Pool = Pool {
             pool_id: new_id,
             total_deposit: 0u64,
             total_paleo: 0u64,
             total_players: 0u64,
             reward: 0u64,
-            redeem_block: 0u32,
-            deposit_deadline_height: deposit_deadline_height, 
+            deposit_deadline_timestamp: deposit_deadline_timestamp,
+            withdrawal_start_timestamp: withdrawal_start_timestamp,
+            deposit_deadline_block: estimated_deposit_deadline_block, 
+            withdrawal_start_block: 0u32,
         };
 
         pools.set(new_id, new_pool);
@@ -109,8 +118,8 @@ program yokin_test_1.aleo {
         let current_pool: Pool = pools.get(pool_id);
 
         // Ensure pool is still open for deposits:
-        // Current block height must be less than deposit_deadline_height.
-        assert(block.height < current_pool.deposit_deadline_height);
+        // Current block height must be less than deposit_deadline_block.
+        assert(block.height < current_pool.deposit_deadline_block);
 
         let player_pool: PlayerPool = PlayerPool {
             player: player,
@@ -134,8 +143,10 @@ program yokin_test_1.aleo {
             total_paleo: current_pool.total_paleo + expected_paleo_mint,
             total_players: current_pool.total_players + 1u64,
             reward: 0u64,
-            redeem_block: 0u32,
-            deposit_deadline_height: current_pool.deposit_deadline_height,
+            deposit_deadline_timestamp: current_pool.deposit_deadline_timestamp,
+            withdrawal_start_timestamp: current_pool.withdrawal_start_timestamp,
+            deposit_deadline_block: current_pool.deposit_deadline_block,
+            withdrawal_start_block: current_pool.withdrawal_start_block,
         };
         pools.set(pool_id, new_pool);
     }
@@ -162,8 +173,8 @@ program yokin_test_1.aleo {
         let current_pool: Pool = pools.get(pool_id);
 
         // Ensure deposit period is over and the pool hasn't been finalized.
-        // Current block height must be greater than deposit_deadline_height.
-        assert(block.height > current_pool.deposit_deadline_height && current_pool.redeem_block == 0u32);
+        // Current block height must be greater than deposit_deadline_block.
+        assert(block.height > current_pool.deposit_deadline_block && current_pool.withdrawal_start_block == 0u32);
         assert(current_pool.total_paleo == paleo_burn_amount);
 
         let winner_slot: PlayerSlot = PlayerSlot {
@@ -184,8 +195,10 @@ program yokin_test_1.aleo {
             total_paleo: current_pool.total_paleo,
             total_players: current_pool.total_players,
             reward: reward,
-            redeem_block: withdrawal.claim_block,
-            deposit_deadline_height: current_pool.deposit_deadline_height,
+            deposit_deadline_timestamp: current_pool.deposit_deadline_timestamp,
+            withdrawal_start_timestamp: current_pool.withdrawal_start_timestamp,
+            deposit_deadline_block: current_pool.deposit_deadline_block,
+            withdrawal_start_block: withdrawal.claim_block,
         };
         pools.set(current_pool.pool_id, new_pool);
     }
@@ -210,8 +223,8 @@ program yokin_test_1.aleo {
 
         let current_pool: Pool = pools.get(pool_id);
         // Ensure redemption is allowed:
-        // redeem_block must be set and the current block height must be at or past redeem_block.
-        assert(current_pool.redeem_block != 0u32 && block.height >= current_pool.redeem_block);
+        // withdrawal_start_block must be set and the current block height must be at or past withdrawal_start_block.
+        assert(current_pool.withdrawal_start_block != 0u32 && block.height >= current_pool.withdrawal_start_block);
         
         let player_pool: PlayerPool = PlayerPool {
             player: player,

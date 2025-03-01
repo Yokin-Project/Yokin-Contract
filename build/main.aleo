@@ -10,7 +10,7 @@ import delegator3.aleo;
 import delegator4.aleo;
 import delegator5.aleo;
 import pondo_protocol.aleo;
-program yokin_test_1.aleo;
+program yokin_pool_1.aleo;
 
 struct TokenMetadata:
     token_id as field;
@@ -92,7 +92,7 @@ mapping pool_winner:
 function initialize:
     input r0 as address.public;
     async initialize r0 into r1;
-    output r1 as yokin_test_1.aleo/initialize.future;
+    output r1 as yokin_pool_1.aleo/initialize.future;
 
 finalize initialize:
     input r0 as address.public;
@@ -105,7 +105,7 @@ finalize initialize:
 function create_pool_public:
     input r0 as u32.private;
     async create_pool_public self.caller r0 into r1;
-    output r1 as yokin_test_1.aleo/create_pool_public.future;
+    output r1 as yokin_pool_1.aleo/create_pool_public.future;
 
 finalize create_pool_public:
     input r0 as address.public;
@@ -123,11 +123,11 @@ function join_pool_public:
     input r0 as u64.public;
     input r1 as u64.public;
     input r2 as u64.public;
-    call pondo_protocol.aleo/deposit_public_as_signer r1 r2 yokin_test_1.aleo into r3;
+    call pondo_protocol.aleo/deposit_public_as_signer r1 r2 yokin_pool_1.aleo into r3;
     cast r2 into r4 as u128;
-    call token_registry.aleo/transfer_public_as_signer 1751493913335802797273486270793650302076377624243810059080883537084141842600field yokin_test_1.aleo r4 into r5;
+    call token_registry.aleo/transfer_public_as_signer 1751493913335802797273486270793650302076377624243810059080883537084141842600field yokin_pool_1.aleo r4 into r5;
     async join_pool_public r3 r5 r0 self.signer r1 r2 into r6;
-    output r6 as yokin_test_1.aleo/join_pool_public.future;
+    output r6 as yokin_pool_1.aleo/join_pool_public.future;
 
 finalize join_pool_public:
     input r0 as pondo_protocol.aleo/deposit_public_as_signer.future;
@@ -160,7 +160,7 @@ function select_winner_public:
     input r1 as u64.public;
     call pondo_protocol.aleo/withdraw_public r1 into r2;
     async select_winner_public r2 r0 self.caller r1 into r3;
-    output r3 as yokin_test_1.aleo/select_winner_public.future;
+    output r3 as yokin_pool_1.aleo/select_winner_public.future;
 
 finalize select_winner_public:
     input r0 as pondo_protocol.aleo/withdraw_public.future;
@@ -184,7 +184,7 @@ finalize select_winner_public:
     hash.bhp256 r13 into r14 as field;
     get player_slots[r14] into r15;
     set r15 into pool_winner[r1];
-    get pondo_protocol.aleo/withdrawals[yokin_test_1.aleo] into r16;
+    get pondo_protocol.aleo/withdrawals[yokin_pool_1.aleo] into r16;
     gt r16.microcredits r7.total_deposit into r17;
     assert.eq r17 true;
     sub r16.microcredits r7.total_deposit into r18;
@@ -197,7 +197,7 @@ function redeem_public:
     input r2 as u64.public;
     call credits.aleo/transfer_public r1 r2 into r3;
     async redeem_public r3 r0 r1 r2 into r4;
-    output r4 as yokin_test_1.aleo/redeem_public.future;
+    output r4 as yokin_pool_1.aleo/redeem_public.future;
 
 finalize redeem_public:
     input r0 as credits.aleo/transfer_public.future;
@@ -229,7 +229,7 @@ finalize redeem_public:
 function update_admin_public:
     input r0 as address.public;
     async update_admin_public self.caller r0 into r1;
-    output r1 as yokin_test_1.aleo/update_admin_public.future;
+    output r1 as yokin_pool_1.aleo/update_admin_public.future;
 
 finalize update_admin_public:
     input r0 as address.public;
