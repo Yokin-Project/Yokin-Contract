@@ -5,7 +5,7 @@ import DashboardLayout from '@/layouts/dashboard/_dashboard';
 import Base from '@/components/ui/base';
 import { ProgramId, PoolId, NullAddress } from '@/aleo/program';
 import useSWR from 'swr';
-import { getPoolDetails, getPoolCount, getAllPoolDetails, parseMicrocreditsToCredits, parseTimestampToDate } from '@/aleo/rpc';
+import { getPoolDetails, getPoolCount, getAllPoolDetails, parseMicrocreditsToCredits, parseTimestampToDate, getHeight } from '@/aleo/rpc';
 
 interface Pool {
   pool_id: number;
@@ -51,7 +51,10 @@ const PoolsPage: NextPageWithLayout = () => {
                   <strong>Deposit Deadline Timestamp:</strong> {String(parseTimestampToDate(pool.deposit_deadline_timestamp))}
                 </li>
                 <li>
-                  <strong>Estimated Pool Finish Timestamp:</strong> {String(parseTimestampToDate(pool.withdrawal_start_timestamp))}
+                  <strong>Estimated Withdrawal Start Timestamp:</strong> {String(parseTimestampToDate(pool.withdrawal_start_timestamp))}
+                </li>
+                <li>
+                  <strong>Reward:</strong> {parseMicrocreditsToCredits(pool.reward)} ALEO
                 </li>
                 <li>
                   <strong>Winner:</strong> {pool.winner === NullAddress ? 'No winner yet' : pool.winner}

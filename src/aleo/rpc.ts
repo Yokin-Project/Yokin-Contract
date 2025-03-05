@@ -1,26 +1,6 @@
 import { JSONRPCClient } from 'json-rpc-2.0';
 import { ProgramId } from './program';
-import { Field, Plaintext } from "@demox-labs/aleo-sdk";
-// import { Field, Plaintext } from "@provablehq/sdk"
-
-export const snarkvmNetworks = {
-  testnet: "TestnetV0",
-  mainnet: "MainnetV0",
-  canary: "CanaryV0",
-};
-
-export const hashPlaintext = (toHash: string) => {
-  try {
-    return Plaintext.fromString(toHash).hashBhp256();
-  } catch (error) {
-    console.log(error);
-  }
-  // return Plaintext.fromString(
-  //   snarkvmNetworks["mainnet"],
-  //   toHash
-  // ).hashBhp256();
-  // return toHash;
-};
+import { Hasher } from '@doko-js/wasm';
 
 export const ALEO_URL = 'https://mainnet.aleorpc.com/';
 export const ALEOSCAN_URL = 'https://aleoscan.io/api/v1/';
@@ -141,6 +121,14 @@ export async function getAleoPaleoRate(): Promise<any> {
   return exchangeRate;
 }
 
+export async function getUserBalanceInPool(player: string, poolId: number): Promise<any> {
+  const hashedPlayerPool = await hashPlayerPool(player, poolId.toString());
+  const response = await fetch(`${ALEOSCAN_URL}mapping/get_value/${ProgramId}/balances/${hashedPlayerPool}`);
+  const balance = await response.json();
+  console.log("balance", balance);
+  return balance;
+}
+
 // Parser
 
 export function parseMicrocreditsToCredits(microcredits: number): number {
@@ -183,4 +171,16 @@ export function parseAleoPoolString(poolString: string): any {
 
   const jsonString = `{${jsonPairs.join(',')}}`;
   return JSON.parse(jsonString);
+}
+
+// Hashing
+
+export async function hashPlayerPool(player: string, pool: string): Promise<string> {
+  const hashedField = Hasher.hash(
+    "bhp256", // algorithm
+    `{player: ${player}, pool: ${pool}}`, // input value
+    "field", // output type
+    "mainnet"
+  );
+  return hashedField;
 }
