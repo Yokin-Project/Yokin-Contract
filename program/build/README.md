@@ -1,4 +1,4 @@
-# yokin_pool_5_test.aleo
+# player_pool_hash.aleo
 
 ## Build Guide
 

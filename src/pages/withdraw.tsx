@@ -12,7 +12,8 @@ import {
   WalletNotConnectedError,
 } from '@demox-labs/aleo-wallet-adapter-base';
 import { PoolId, ProgramId } from '@/aleo/program';
-import { hashPlaintext } from '@/aleo/rpc';
+import { getUserBalanceInPool, getPoolDetails } from '@/aleo/rpc';
+import useSWR from 'swr';
 
 function tryParseJSON(input: string): string | object {
   try {
@@ -27,26 +28,41 @@ const Withdraw: NextPageWithLayout = () => {
 
   let [programId, setProgramId] = useState(ProgramId);
 
-  let [functionName, setFunctionName] = useState('random_winner_public');
+  let [functionName, setFunctionName] = useState('redeem_public');
   let [poolId, setPoolId] = useState<number | undefined>(PoolId);
   let [player, setPlayer] = useState<string | undefined>(publicKey ?? '');
-  let [creditsRedeem, setCreditsRedeem] = useState<number | undefined>(0.1); // TODO fetch via api
+  let [depositAmount, setDepositAmount] = useState<number | undefined>(0);
+  let [isWinner, setIsWinner] = useState<boolean>(false);
+  let [reward, setReward] = useState<number>(0);
+  let [totalCreditsRedeem, setTotalCreditsRedeem] = useState<number | undefined>(0); // TODO fetch via api
   let [fee, setFee] = useState<number | undefined>(0.6); // Aleo
   let [transactionId, setTransactionId] = useState<string | undefined>();
   let [status, setStatus] = useState<string | undefined>();
-
-  let [hashstring, setHashstring] = useState<string | undefined>('');
-  let [field, setField] = useState<string | undefined>('');
 
   useEffect(() => {
     setPlayer(publicKey ?? '');
   }, [publicKey]);
 
   useEffect(() => {
-    if (hashstring) {
-      setField(hashPlaintext(hashstring));
+    if (player && poolId) {
+      getUserBalanceInPool(player, poolId).then(balance => {
+        setDepositAmount(balance);
+        setTotalCreditsRedeem(balance + reward);
+      });
     }
-  }, [hashstring]);
+  }, [player, poolId]);
+
+  useEffect(() => {
+    if (poolId) {
+      getPoolDetails(poolId).then(pool => {
+        if (pool.winner === player) {
+          setIsWinner(true);
+          setReward(pool.reward);
+          setTotalCreditsRedeem(depositAmount + pool.reward);
+        }
+      });
+    }
+  }, [poolId]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
@@ -73,7 +89,7 @@ const Withdraw: NextPageWithLayout = () => {
       'mainnet',
       programId,
       functionName,
-      [poolId + "u64", player, Math.floor(creditsRedeem! * 1_000_000) + "u64"],
+      [poolId + "u64", player, totalCreditsRedeem! + "u64"],
       Math.floor(fee! * 1_000_000)!,
       false
     );
@@ -143,7 +159,7 @@ const Withdraw: NextPageWithLayout = () => {
           <label className="flex w-full items-center justify-between py-4">
             Player:
             <input
-              type="number"
+              type="text"
               className="w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
               placeholder="Player Address"
               onChange={(event) => { setPlayer(event.currentTarget.value) }}
@@ -152,16 +168,45 @@ const Withdraw: NextPageWithLayout = () => {
           </label>
 
           <label className="flex w-full items-center justify-between py-4">
-            Credits Redeem:
+            Deposited Amount:
+            <input
+              type="number"
+              className="w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+              placeholder="Amount of Deposits to redeem"
+              value={depositAmount ?? '0'}
+              readOnly
+            />
+          </label>
+
+          <label className='flex w-full items-center justify-between py-4'>
+            Is Winner:
+            <input
+              type="text"
+              className="w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+              value={String(isWinner) ?? 'No'}
+              readOnly
+            />
+          </label>
+
+          <label className="flex w-full items-center justify-between py-4">
+            Winner Reward:
+            <input
+              type="number"
+              className="w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+              placeholder="Reward"
+              value={reward ?? '0'}
+              readOnly
+            />
+          </label>
+
+          <label className="flex w-full items-center justify-between py-4">
+            Total Credits Redeem:
             <input
               type="number"
               className="w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
               placeholder="Amount of Credits to redeem (in credits)"
-              onChange={(event) => {
-                const parsed = parseFloat(event.target.value);
-                setCreditsRedeem(!Number.isNaN(parsed) ? parsed : undefined);
-              }}
-              value={creditsRedeem ?? ''}
+              value={totalCreditsRedeem ?? '0'}
+              readOnly
             />
           </label>
 
